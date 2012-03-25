@@ -10,10 +10,10 @@ require 'urbanterror'
 
 bot = Cinch::Bot.new do
   configure do |c|
-    c.nick = 'miscblock'
+    c.nick = 'miscbot'
     c.server = 'irc.tenthbit.net'
     c.port = 6667
-    c.channels = ['#bots']
+    c.channels = ['#offtopic', '#bots', '#flood']
 
     c.plugins.plugins = [Cinch::Plugins::BasicCTCP]
     c.plugins.options[Cinch::Plugins::BasicCTCP][:commands] = [:version, :time, :ping]
