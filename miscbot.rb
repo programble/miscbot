@@ -6,19 +6,73 @@ require 'cinch/plugins/basic_ctcp'
 require 'digest/md5'
 require 'open-uri'
 require 'tzinfo'
+require 'urbanterror'
 
 bot = Cinch::Bot.new do
   configure do |c|
-    c.nick = 'miscbot'
+    c.nick = 'miscblock'
     c.server = 'irc.tenthbit.net'
     c.port = 6667
-    c.channels = ['#offtopic', '#bots', '#flood']
+    c.channels = ['#bots']
 
     c.plugins.plugins = [Cinch::Plugins::BasicCTCP]
     c.plugins.options[Cinch::Plugins::BasicCTCP][:commands] = [:version, :time, :ping]
 
     @last_question = {}
     @memes = []
+  end
+
+  on :message, /^!urt (.+)/ do |m, server|
+    begin
+      Timeout::timeout 5 do
+        # Split the server:port and do some magic.
+        port = server.split(':')
+        server = port[0]
+        port = port.size > 1 ? port.to_i : 27960
+        urt = UrbanTerror.new(server, port)
+        settings = urt.settings
+        players = urt.players.sort_by { |player| -player[:score] }
+        playersinfo = []
+        if players.count != 0
+          players.each do |player|
+            player[:name] = "#{3.chr}04#{player[:name]}#{3.chr}" if player[:ping] == 999
+            playersinfo << "#{player[:name].gsub(/ +/, ' ')} (#{player[:score]})"
+          end
+          players = "Players: #{playersinfo.join(', ')}"
+        else
+          players = "No players."
+        end
+        weapons = UrbanTerror.reverseGearCalc(settings['g_gear'].to_i)
+        weapons = case weapons.size
+                  when 0
+                    'knives'
+                  when 7
+                    'all weapons'
+                  else
+                    weapons.join(', ')
+                  end
+        gametype = UrbanTerror.matchType(settings['g_gametype'].to_i, true)
+        m.reply("Map: #{2.chr}#{settings['mapname']}#{2.chr} (#{gametype} w/ #{weapons}). #{players}")
+      end
+    rescue Timeout::Error
+      m.reply("Timeout occurred.")
+    rescue => error
+      m.reply("[ERROR] #{error.message} (check your syntax and try again).")
+    end
+  end
+
+  on :message, /^!gear (.+)/ do |m, gear|
+    begin
+      if gear =~ /^-?\d+$/
+        weapons = UrbanTerror.reverseGearCalc(gear.to_i).join(', ')
+        m.reply("#{weapons}")
+      else
+        number = UrbanTerror.gearCalc(gear.gsub(' ','').split(','))
+        m.reply("#{number}")
+      end
+    rescue => error
+      m.reply("#{error.message}")
+    end
   end
 
   on :message, /^`meep$/ do |m|
