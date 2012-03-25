@@ -3,17 +3,34 @@
 require 'cgi'
 require 'cinch'
 require 'cinch/plugins/basic_ctcp'
+require 'configru'
 require 'digest/md5'
 require 'open-uri'
 require 'tzinfo'
 require 'urbanterror'
 
+Configru.load do
+  just 'miscbot.yml'
+
+  options do
+    irc do
+      nick String, 'miscbot'
+      server String, ''
+      port Fixnum, 6667
+      channels Array, []
+      prefix String, '!'
+    end
+  end
+end
+
+$pre = Regexp.escape(Configru.irc.prefix)
+
 bot = Cinch::Bot.new do
   configure do |c|
-    c.nick = 'miscbot'
-    c.server = 'irc.tenthbit.net'
-    c.port = 6667
-    c.channels = ['#offtopic', '#bots', '#flood']
+    c.nick = Configru.irc.nick
+    c.server = Configru.irc.server
+    c.port = Configru.irc.port
+    c.channels = Configru.irc.channels
 
     c.plugins.plugins = [Cinch::Plugins::BasicCTCP]
     c.plugins.options[Cinch::Plugins::BasicCTCP][:commands] = [:version, :time, :ping]
@@ -22,7 +39,7 @@ bot = Cinch::Bot.new do
     @memes = []
   end
 
-  on :message, /^!urt (.+)/ do |m, server|
+  on :message, /^#{$pre}urt (.+)/ do |m, server|
     begin
       Timeout::timeout 5 do
         # Split the server:port and do some magic.
@@ -61,7 +78,7 @@ bot = Cinch::Bot.new do
     end
   end
 
-  on :message, /^!gear (.+)/ do |m, gear|
+  on :message, /^#{$pre}gear (.+)/ do |m, gear|
     begin
       if gear =~ /^-?\d+$/
         weapons = UrbanTerror.reverseGearCalc(gear.to_i).join(', ')
@@ -79,17 +96,17 @@ bot = Cinch::Bot.new do
     m.reply('meep')
   end
 
-  on :message, /^!lcalc (\S+) (\S+)$/ do |m, a, b|
+  on :message, /^#{$pre}lcalc (\S+) (\S+)$/ do |m, a, b|
     aa = Digest::MD5.hexdigest(a).to_i(16)
     bb = Digest::MD5.hexdigest(b).to_i(16)
     m.reply("Love match for #{a} and #{b}: #{(aa + bb) % 100}%", true)
   end
 
-  on :message, /^!flip$/ do |m|
+  on :message, /^#{$pre}flip$/ do |m|
     m.reply(['Heads', 'Tails'].sample, true)
   end
 
-  on :message, /^!(\d+)?d(\d+)$/ do |m, dice, sides|
+  on :message, /^#{$pre}(\d+)?d(\d+)$/ do |m, dice, sides|
     dice, sides = dice.to_i, sides.to_i
     if dice < 2
       m.reply(rand(sides) + 1, true)
@@ -103,12 +120,12 @@ bot = Cinch::Bot.new do
     end
   end
 
-  on :message, /^(!automeme|!meme) ?(.+)?/ do |m, _, target|
+  on :message, /^#{$pre}(automeme|meme) ?(.+)?/ do |m, _, target|
     @memes = open('http://api.automeme.net/text').read.split("\n") if @memes == []
     m.reply(target ? "#{target}: #{@memes.shift}" : @memes.shift)
   end
 
-  on :message, /^!lmgtfy$/ do |m|
+  on :message, /^#{$pre}lmgtfy$/ do |m|
     return unless @last_question[m.channel]
     words = @last_question[m.channel].message.split(' ')
     words = words[1..-1] if words[0].include?(':')
@@ -116,7 +133,7 @@ bot = Cinch::Bot.new do
     @last_question[m.channel].reply("http://lmgtfy.com/?q=#{CGI.escape(message)}", true)
   end
 
-  on :message, /^!time (.+)/ do |m, timezone|
+  on :message, /^#{$pre}time (.+)/ do |m, timezone|
     begin
       tz = TZInfo::Timezone.get(timezone.gsub(' ', '_'))
     rescue TZInfo::InvalidTimezoneIdentifier
