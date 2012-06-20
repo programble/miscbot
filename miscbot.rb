@@ -42,11 +42,19 @@ bot = Cinch::Bot.new do
   on :message, /^#{$pre}urt (.+)/ do |m, server|
     begin
       Timeout::timeout 5 do
-        # Split the server:port and do some magic.
-        port = server.split(':')
-        server = port[0]
-        port = port.size > 1 ? port.to_i : 27960
-        urt = UrbanTerror.new(server, port)
+        server_from_cfg = Configru.urbanterror.servers.detect do |s|
+          s['aliases'].include? server || s['name'] == server
+        end
+        if server_from_cfg
+          port = server_from_cfg['port']
+          hostname = server_from_cfg['name']
+        else
+          # Split the server:port and do some magic.
+          port = server.split(':')
+          hostname = port[0]
+          port = port.size > 1 ? port.to_i : 27960
+        end
+        urt = UrbanTerror.new(hostname, port)
         settings = urt.settings
         players = urt.players.sort_by { |player| -player[:score] }
         playersinfo = []
