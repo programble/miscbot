@@ -78,6 +78,22 @@ bot = Cinch::Bot.new do
     end
   end
 
+  on :message, /^#{$pre}rcon (.+?) (.+)/ do |m, hostname, command|
+    server = Configru.urbanterror.servers.detect do |server|
+      server['aliases'].include? hostname || server['name'] == hostname
+    end
+
+    m.reply("That server wasn't found in my config file.") and next unless server
+
+    if server['rcon_hostmasks'].include? m.user.host
+      urt = UrbanTerror.new(server['name'], server['port'], server['rcon_password'])
+      urt.rcon command
+      m.reply("Sent rcon command: #{command}")
+    else
+      m.reply("Your hostmask doesn't have rcon access to this server.")
+    end    
+  end
+
   on :message, /^#{$pre}gear (.+)/ do |m, gear|
     begin
       if gear =~ /^-?\d+$/
