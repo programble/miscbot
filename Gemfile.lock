@@ -1,12 +1,12 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    cinch (2.0.2)
+    cinch (2.0.3)
     cinch-basic_ctcp (1.0.2)
       cinch (~> 2.0)
     configru (0.5.0)
     tzinfo (0.3.33)
-    urbanterror (1.1)
+    urbanterror (3.0.0)
 
 PLATFORMS
   ruby
