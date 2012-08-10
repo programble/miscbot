@@ -68,7 +68,7 @@ bot = Cinch::Bot.new do
         else
           players = "No players."
         end
-        weapons = UrbanTerror.reverseGearCalc(settings['g_gear'].to_i)
+        weapons = UrbanTerror.reverse_gear_calc(settings['g_gear'].to_i)
         weapons = case weapons.size
                   when 0
                     'knives'
@@ -77,7 +77,7 @@ bot = Cinch::Bot.new do
                   else
                     weapons.join(', ')
                   end
-        gametype = UrbanTerror.matchType(settings['g_gametype'].to_i, true)
+        gametype = UrbanTerror.match_type(settings['g_gametype'].to_i, true)
         m.reply("Map: #{2.chr}#{settings['mapname']}#{2.chr} (#{gametype} w/ #{weapons}). #{players}")
       end
     rescue Timeout::Error
@@ -106,10 +106,10 @@ bot = Cinch::Bot.new do
   on :message, /^#{$pre}gear (.+)/ do |m, gear|
     begin
       if gear =~ /^-?\d+$/
-        weapons = UrbanTerror.reverseGearCalc(gear.to_i).join(', ')
+        weapons = UrbanTerror.reverse_gear_calc(gear.to_i).join(', ')
         m.reply("#{weapons}")
       else
-        number = UrbanTerror.gearCalc(gear.gsub(' ','').split(','))
+        number = UrbanTerror.gear_calc(gear.gsub(' ','').split(','))
         m.reply("#{number}")
       end
     rescue => error
